@@ -1,0 +1,10 @@
+store:
+  name: ""
+  domain: ""
+
+mysql:
+  image: mysql:8.0
+  storage: 5Gi
+
+wordpress:
+  image: wordpress:6.4-apache
