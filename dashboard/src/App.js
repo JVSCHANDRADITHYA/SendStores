@@ -1,87 +1,83 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchStores, createStore, deleteStore } from "./api";
 
-const API_BASE = "http://localhost:4000"; // backend (we'll create this next)
+import StoreTable from "./components/StoreTable";
+import SummaryCards from "./components/SummaryCards";
+import StatusChart from "./components/StatusChart";
+
 
 function App() {
-  const [stores, setStores] = useState([]);
   const [engine, setEngine] = useState("woocommerce");
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchStores = async () => {
-    const res = await fetch(`${API_BASE}/stores`);
-    const data = await res.json();
-    setStores(data);
-  };
+  // Fetch stores (poll every 3 seconds)
+  const {
+    data: stores = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["stores"],
+    queryFn: fetchStores,
+    refetchInterval: 3000,
+  });
 
-  useEffect(() => {
-    fetchStores();
-  }, []);
+  // Create store
+  const createStoreMutation = useMutation({
+    mutationFn: () => createStore(engine),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["stores"]);
+    },
+  });
 
-  const createStore = async () => {
-    setLoading(true);
-    await fetch(`${API_BASE}/stores`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ engine }),
-    });
-    setLoading(false);
-    fetchStores();
-  };
-
-  const deleteStore = async (id) => {
-    await fetch(`${API_BASE}/stores/${id}`, { method: "DELETE" });
-    fetchStores();
-  };
+  // Delete store
+  const deleteStoreMutation = useMutation({
+    mutationFn: (id) => deleteStore(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["stores"]);
+    },
+  });
 
   return (
-    <div style={{ padding: 30, fontFamily: "Arial" }}>
-      <h2>Store Provisioning Dashboard</h2>
+    <div className="container">
+      <header>
+        <h1>Store Provisioning Dashboard</h1>
+        <p>Local K8s native multi-store orchestration</p>
+      </header>
 
-      <div style={{ marginBottom: 20 }}>
+      {/* Controls */}
+      <div className="controls">
         <select value={engine} onChange={(e) => setEngine(e.target.value)}>
           <option value="woocommerce">WooCommerce</option>
           <option value="medusa">MedusaJS</option>
         </select>
 
         <button
-          onClick={createStore}
-          disabled={loading}
-          style={{ marginLeft: 10 }}
+          onClick={() => createStoreMutation.mutate()}
+          disabled={createStoreMutation.isLoading}
         >
-          {loading ? "Provisioning..." : "Create Store"}
+          {createStoreMutation.isLoading ? "Provisioning..." : "Create Store"}
         </button>
       </div>
 
-      <table border="1" cellPadding="10" width="100%">
-        <thead>
-          <tr>
-            <th>Store ID</th>
-            <th>Engine</th>
-            <th>Status</th>
-            <th>URL</th>
-            <th>Created</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {stores.map((s) => (
-            <tr key={s.id}>
-              <td>{s.id}</td>
-              <td>{s.engine}</td>
-              <td>{s.status}</td>
-              <td>
-                <a href={s.url} target="_blank" rel="noreferrer">
-                  {s.url}
-                </a>
-              </td>
-              <td>{new Date(s.createdAt).toLocaleString()}</td>
-              <td>
-                <button onClick={() => deleteStore(s.id)}>Delete</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {isLoading && <p>Loading stores…</p>}
+      {isError && <p>Error loading stores</p>}
+
+      {!isLoading && !isError && (
+        <>
+          {/* 🔥 NEW: Top summary cards */}
+          <SummaryCards stores={stores} />
+
+          {/* 📊 NEW: Charts */}
+          <StatusChart stores={stores} />
+
+          {/* 📋 Existing table */}
+          <StoreTable
+            stores={stores}
+            onDelete={(id) => deleteStoreMutation.mutate(id)}
+          />
+        </>
+      )}
     </div>
   );
 }

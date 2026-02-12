@@ -1,0 +1,106 @@
+/* src/styles/dark.css */
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #0b0d12;
+  color: #e5e7eb;
+}
+
+.container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 30px;
+}
+
+/* Header */
+header h1 {
+  margin-bottom: 4px;
+  color: #f9fafb;
+}
+
+header p {
+  color: #9ca3af;
+  margin-bottom: 20px;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+select {
+  background: #111827;
+  color: #e5e7eb;
+  border: 1px solid #1f2937;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+/* Cards */
+.card,
+.chart-card {
+  background: #111827;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+}
+
+.card-label {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #111827;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 12px;
+  border-bottom: 1px solid #1f2937;
+}
+
+th {
+  text-align: left;
+  background: #0f172a;
+  color: #9ca3af;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+tr:hover td {
+  background: #0f172a;
+}
+
+/* Subtle grid overlay (optional but safe) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: -1;
+}
