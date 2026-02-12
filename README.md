@@ -1,4 +1,5 @@
-"# SendStores" 
+# SendStores
+
 Dashboard for monitoring the status of SendStores, a service that provides a way to store and retrieve data in a distributed manner. The dashboard displays various metrics related to the performance and health of the SendStores service, such as request latency, error rates, and resource utilization. It allows users to quickly identify any issues or bottlenecks in the system and take appropriate actions to resolve them. The dashboard is designed to be user-friendly and provides real-time updates on the status of the SendStores service.
 ![alt text](public/Dashboard.png)
 
