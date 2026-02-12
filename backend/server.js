@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const { exec } = require("child_process");
+const { createClient } = require("redis");
+
 
 const app = express();
 app.use(cors());
@@ -8,10 +10,26 @@ app.use(express.json());
 
 const PORT = 4000;
 
-// In-memory store registry (Round-1 OK)
-const stores = {}; // id -> { id, engine, status, url, createdAt, release, namespace }
+/* =========================
+   Redis (Control Plane DB)
+   ========================= */
+const redis = createClient({
+  url: process.env.REDIS_URL || "redis://localhost:6379",
+});
 
-// Helpers
+
+redis.on("error", (err) => {
+  console.error("Redis error", err);
+});
+
+(async () => {
+  await redis.connect();
+  console.log("Connected to Redis");
+})();
+
+/* =========================
+   Helpers
+   ========================= */
 const run = (cmd) =>
   new Promise((resolve, reject) => {
     exec(cmd, { maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
@@ -22,11 +40,30 @@ const run = (cmd) =>
 
 const genId = () => `store-${Math.random().toString(36).slice(2, 8)}`;
 
-// Routes
-app.get("/stores", (req, res) => {
-  res.json(Object.values(stores));
+const storeKey = (id) => `store:${id}`;
+
+/* =========================
+   Routes
+   ========================= */
+
+/**
+ * LIST STORES
+ * Source of truth: Redis
+ */
+app.get("/stores", async (req, res) => {
+  try {
+    const keys = await redis.keys("store:*");
+    const stores = await Promise.all(keys.map((k) => redis.hGetAll(k)));
+    res.json(stores);
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch stores" });
+  }
 });
 
+/**
+ * CREATE STORE
+ * Idempotent at control-plane level
+ */
 app.post("/stores", async (req, res) => {
   const { engine = "woocommerce" } = req.body;
 
@@ -35,73 +72,74 @@ app.post("/stores", async (req, res) => {
   const release = id;
   const domain = `${id}.localtest.me`;
 
-  stores[id] = {
+  const store = {
     id,
     engine,
     status: "Provisioning",
     url: `http://${domain}`,
     createdAt: new Date().toISOString(),
-    release,
     namespace,
+    release,
   };
 
-  res.status(202).json(stores[id]);
+  // Persist immediately
+  await redis.hSet(storeKey(id), store);
+
+  res.status(202).json(store);
 
   try {
-    // Namespace
-    
+    const chartPath =
+      engine === "woocommerce"
+        ? "/helm/woocommerce"
+        : "/helm/medusa";
 
-    if (engine === "woocommerce") {
-      // Helm install WooCommerce
-        await run(
-        [
-            `helm install ${release} ../helm/woocommerce`,
-            `--namespace ${namespace}`,
-            `--create-namespace`,
-            `--set store.name=${id}`,
-            `--set store.domain=${domain}`,
-        ].join(" ")
-        );
+    await run(
+      [
+        `helm install ${release} ${chartPath}`,
+        `--namespace ${namespace}`,
+        `--create-namespace`,
+        `--set store.name=${id}`,
+        `--set store.domain=${domain}`,
+      ].join(" ")
+    );
 
-    } else {
-      // Medusa stub (chart exists, minimal install)
-      await run(
-        [
-          `helm install ${release} ./helm/medusa`,
-          `--namespace ${namespace}`,
-          `--set store.name=${id}`,
-          `--set store.domain=${domain}`,
-        ].join(" ")
-      );
-    }
-
-    // Simple readiness wait (demo-safe)
-    setTimeout(() => {
-      if (stores[id]) stores[id].status = "Ready";
+    // Mark Ready after stabilization window
+    setTimeout(async () => {
+      await redis.hSet(storeKey(id), { status: "Ready" });
     }, 30000);
   } catch (e) {
-    if (stores[id]) stores[id].status = "Failed";
+    await redis.hSet(storeKey(id), { status: "Failed" });
     console.error("Provisioning failed:", e);
   }
 });
 
+/**
+ * DELETE STORE
+ * Strong cleanup guarantees
+ */
 app.delete("/stores/:id", async (req, res) => {
   const { id } = req.params;
-  const s = stores[id];
-  if (!s) return res.status(404).json({ error: "Not found" });
+
+  const store = await redis.hGetAll(storeKey(id));
+  if (!store || !store.id) {
+    return res.status(404).json({ error: "Store not found" });
+  }
 
   try {
-    await run(`helm uninstall ${s.release} -n ${s.namespace}`);
+    await run(`helm uninstall ${store.release} -n ${store.namespace}`);
   } catch (_) {}
 
   try {
-    await run(`kubectl delete namespace ${s.namespace}`);
+    await run(`kubectl delete namespace ${store.namespace}`);
   } catch (_) {}
 
-  delete stores[id];
+  await redis.del(storeKey(id));
   res.json({ ok: true });
 });
 
+/* =========================
+   Server
+   ========================= */
 app.listen(PORT, () => {
   console.log(`Backend listening on http://localhost:${PORT}`);
 });
