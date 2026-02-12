@@ -1,0 +1,14 @@
+store:
+  name: ""
+  domain: ""
+
+postgres:
+  image: postgres:15
+  storage: 5Gi
+
+medusa:
+  image: linuxserver/medusa:1.0.25
+
+
+redis:
+  image: redis:7

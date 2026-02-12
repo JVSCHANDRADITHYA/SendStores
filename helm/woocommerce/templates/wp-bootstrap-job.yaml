@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: wp-bootstrap
+  namespace: {{ .Values.store.name }}
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+
+      containers:
+      - name: wp-cli
+        image: wp-cli/wp-cli:2.9
+        command: ["sh", "-c"]
+        args:
+          - |
+            set -e
+
+            echo "Waiting for MySQL..."
+            until wp db check --path=/var/www/html --allow-root; do
+              sleep 5
+            done
+
+            echo "Installing WordPress (idempotent)..."
+            wp core install \
+              --url="http://{{ .Values.store.domain }}" \
+              --title="Store {{ .Values.store.name }}" \
+              --admin_user=admin \
+              --admin_password=admin123 \
+              --admin_email=admin@store.local \
+              --skip-email \
+              --path=/var/www/html \
+              --allow-root || true
+
+            echo "Installing WooCommerce..."
+            wp plugin install woocommerce --activate \
+              --path=/var/www/html \
+              --allow-root || true
+
+            echo "Enabling Cash on Delivery..."
+            wp option update woocommerce_cod_settings \
+              '{"enabled":"yes","title":"Cash on Delivery","instructions":"Pay with cash"}' \
+              --format=json \
+              --path=/var/www/html \
+              --allow-root
+
+            echo "Creating test product..."
+            PRODUCT_ID=$(wp post create \
+              --post_type=product \
+              --post_title="Test Product" \
+              --post_status=publish \
+              --porcelain \
+              --path=/var/www/html \
+              --allow-root)
+
+            wp post meta update $PRODUCT_ID _regular_price 100
+            wp post meta update $PRODUCT_ID _price 100
+
+            echo "WooCommerce store ready."
+
+        volumeMounts:
+          - name: wp-content
+            mountPath: /var/www/html
+
+      volumes:
+        - name: wp-content
+          persistentVolumeClaim:
+            claimName: wp-content

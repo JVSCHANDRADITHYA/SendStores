@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: medusa
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: {{ .Values.store.domain }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: medusa
+            port:
+              number: 9000

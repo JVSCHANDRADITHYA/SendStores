@@ -17,16 +17,29 @@ spec:
       - name: wordpress
         image: {{ .Values.wordpress.image }}
         ports:
-        - containerPort: 80
+          - containerPort: 80
         env:
-        - name: WORDPRESS_DB_HOST
-          value: mysql
-        - name: WORDPRESS_DB_NAME
-          value: wordpress
-        - name: WORDPRESS_DB_USER
-          value: wp
-        - name: WORDPRESS_DB_PASSWORD
-          value: wp
+          - name: WORDPRESS_DB_HOST
+            value: mysql
+          - name: WORDPRESS_DB_NAME
+            value: wordpress
+          - name: WORDPRESS_DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: MYSQL_USER
+          - name: WORDPRESS_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: MYSQL_PASSWORD
+        volumeMounts:
+          - name: wp-content
+            mountPath: /var/www/html
+      volumes:
+        - name: wp-content
+          persistentVolumeClaim:
+            claimName: wp-content
 ---
 apiVersion: v1
 kind: Service
@@ -37,4 +50,5 @@ spec:
   selector:
     app: wordpress
   ports:
-  - port: 80
+    - port: 80
+      targetPort: 80

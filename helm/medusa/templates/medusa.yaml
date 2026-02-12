@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medusa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: medusa
+  template:
+    metadata:
+      labels:
+        app: medusa
+    spec:
+      containers:
+      - name: medusa
+        image: {{ .Values.medusa.image }}
+        ports:
+        - containerPort: 9000
+        env:
+        - name: DATABASE_URL
+          value: postgres://medusa:medusa@postgres:5432/medusa
+        - name: REDIS_URL
+          value: redis://redis:6379
+        - name: JWT_SECRET
+          value: supersecret
+        - name: COOKIE_SECRET
+          value: supersecret
+        - name: MEDUSA_ADMIN_ONBOARDING_TYPE
+          value: default
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: medusa
+spec:
+  selector:
+    app: medusa
+  ports:
+  - port: 9000
