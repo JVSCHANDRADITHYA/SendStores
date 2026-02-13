@@ -66,7 +66,7 @@ Prerequisites
 1. Clone & Dependencies
 ```bash
 git clone https://github.com/JVSCHANDRADITHYA/SendStores
-cd your-repo-name
+cd SendStores
 ```
 # Install Backend Dependencies
 ```
