@@ -1,8 +1,10 @@
 # SendStores
 ### Kubernetes-Native Multi-Store Control Plane
 A simplified control plane for provisioning isolated, on-demand e-commerce stores using Kubernetes and Helm.
-<p><b>DO CHECKOUT THE MARIADB BRANCH FOR OPTMIZED DATABASE PERFROMANCE PER STORE</b></p>
-<!-- -->
+
+![APPLICATION](public/mock.png)
+
+<center><p><b>DO CHECKOUT THE MARIADB BRANCH FOR OPTMIZED DATABASE PERFROMANCE PER STORE</b></p></center>
 
 # Overview
 This project implements a Kubernetes-native architecture to provision, manage, and tear down isolated WordPress + WooCommerce instances. Unlike standard multi-site installations, this system leverages namespace-level isolation, ensuring each store runs as a distinct set of workloads with its own database, persistent storage, and networking rules.
