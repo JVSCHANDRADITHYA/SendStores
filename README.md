@@ -1,6 +1,7 @@
 # SendStores
 ### Kubernetes-Native Multi-Store Control Plane
 A simplified control plane for provisioning isolated, on-demand e-commerce stores using Kubernetes and Helm.
+<p><b>DO CHECKOUT THE MARIADB BRANCH FOR OPTMIZED DATABASE PERFROMANCE PER STORE</b></p>
 <!-- -->
 
 # Overview
@@ -9,43 +10,42 @@ The core goal is to demonstrate a production-aligned "SaaS" pattern where a Node
 
 <!-- -------------------------------------------------------------------------------- -->
 # Features
-• Namespace Isolation: Each store is deployed into its own Kubernetes namespace, ensuring hard isolation for secrets, volumes, and networking.
-• Helm as the Contract: Uses a single Helm chart for all deployments. Environment differences (Local vs. Prod) are handled strictly via values.yaml files—no duplicated manifests.
-• Automated Lifecycle: A Node.js backend handles the creation (Helm install), state tracking (Redis), and destruction (Helm uninstall) of stores.
-• Persistence: Each store is provisioned with dynamic Persistent Volume Claims (PVCs) for both the MySQL database and WordPress content.
-• Ingress-Ready: Automatically configures Ingress rules to expose stores on unique subdomains (e.g., store-id.localtest.me).
-• Deterministic Bootstrapping: Solves the "empty WordPress" problem by executing wp-cli commands directly within the runtime context.
+
+- Namespace Isolation: Each store is deployed into its own Kubernetes namespace, ensuring hard isolation for secrets, volumes, and networking.
+- Helm as the Contract: Uses a single Helm chart for all deployments. Environment differences (Local vs. Prod) are handled strictly via values.yaml files—no duplicated manifests.
+- Automated Lifecycle: A Node.js backend handles the creation (Helm install), state tracking (Redis), and destruction (Helm uninstall) of stores.
+- Persistence: Each store is provisioned with dynamic Persistent Volume Claims (PVCs) for both the MySQL database and WordPress content.
+- Ingress-Ready: Automatically configures Ingress rules to expose stores on unique subdomains (e.g., store-id.localtest.me).
+- Deterministic Bootstrapping: Solves the "empty WordPress" problem by executing wp-cli commands directly within the runtime context.
 
 <!-- -------------------------------------------------------------------------------- -->
 # User Stories
+
 1. The "One-Click" Provisioning Story
-    ◦ As a platform operator, I want to click "Create Store" via an API or Dashboard, so that a fully functional WooCommerce store is generated with a unique URL, requiring no manual installation steps.
+    - As a platform operator, I want to click "Create Store" via an API or Dashboard, so that a fully functional WooCommerce store is generated with a unique URL, requiring no manual installation steps.
 2. The Isolation Story
-    ◦ As a tenant, I need my store's database and files to be completely separate from other stores, so that a security breach or configuration error in one store does not affect mine.
+    - As a tenant, I need my store's database and files to be completely separate from other stores, so that a security breach or configuration error in one store does not affect mine.
 3. The Clean Teardown Story
-    ◦ As a developer, I want to be able to delete a store and have all associated resources (PVCs, Secrets, Services) removed immediately to prevent resource leaks in the cluster.
+    - As a developer, I want to be able to delete a store and have all associated resources (PVCs, Secrets, Services) removed immediately to prevent resource leaks in the cluster.
 
 <!-- -------------------------------------------------------------------------------- -->
 #  Architecture
+
+![alt text](public/arch.jpg)
+
 The system allows a Control Plane (running outside the cluster or in a management namespace) to orchestrate a Data Plane (the stores).
-1. Control Plane (Node.js + Redis)
-• Backend: Accepts POST /stores requests. It generates a unique Store ID and maps it to a Kubernetes Namespace.
-• State Store (Redis): Acts as the single source of truth for "Control Plane Intent" (e.g., is the store provisioning, ready, or failed?).
-• Orchestration: Wraps the Helm CLI to execute helm install and helm uninstall commands programmatically.
-2. Data Plane (Kubernetes)
-For every store created, the system spins up the following inside a dedicated namespace:
-• MySQL: StatefulSet with dedicated PVC.
-• WordPress: Deployment running a custom image.
-• Networking: ClusterIP Service and Ingress Controller routing.
-• Secrets: Auto-generated database credentials.
-
-
-![alt text](public/Dashboard.png)
-
-
-
-![alt text](public/docker.png)
-
+1. _**Control Plane (Node.js + Redis)**_
+    - Backend: Accepts POST /stores requests. It generates a unique Store ID and maps it to a Kubernetes Namespace.
+    - State Store (Redis): Acts as the single source of truth for "Control Plane Intent" (e.g., is the store provisioning, ready, or failed?).
+    - Orchestration: Wraps the Helm CLI to execute helm install and helm uninstall commands programmatically.
+2. _**Data Plane (Kubernetes)**_
+    - For every store created, the system spins up the following inside a dedicated namespace:
+        - MySQL: StatefulSet with dedicated PVC.
+        - WordPress: Deployment running a custom image.
+        - Networking: ClusterIP Service and Ingress Controller routing.
+        - Secrets: Auto-generated database credentials.
+3. _**UI Plane**_
+    - Has the dashboard and graph interfaces
 
 <!-- -------------------------------------------------------------------------------- -->
 #  Engineering Challenges & Solutions
@@ -81,6 +81,12 @@ BACKEND SERVER AT http://localhost:4000 [use /stores]
 ## OR YOU CAN BUILD INDEPENDENTLY
 
 Refer to [INDIVIDUAL-BUILD.md](INDIVIDUAL-BUILD.md)
+
+# SCREENSHOTS of the WORKING APPLICATION
+
+![alt text](public/Dashboard.png)
+
+![alt text](public/docker.png)
 
 <!-- -------------------------------------------------------------------------------- -->
 # Future Roadmap
