@@ -125,21 +125,39 @@ app.delete("/stores/:id", async (req, res) => {
     return res.status(404).json({ error: "Store not found" });
   }
 
-  // 1. Uninstall Helm release
+  // Mark deleting (important for UI)
+  await redis.hSet(storeKey(id), { status: "Deleting" });
+
+  // 1. Helm uninstall (idempotent)
   try {
     await run(`helm uninstall ${store.release} -n ${store.namespace}`);
-  } catch (_) {}
+  } catch (e) {
+    console.warn("helm uninstall failed (continuing):", e);
+  }
 
-  // 2. Force-delete namespace (authoritative)
+  // 2. Delete namespace (authoritative)
   try {
-    await run(`kubectl delete ns ${store.namespace} --wait=false`);
-  } catch (_) {}
+    await run(`kubectl delete ns ${store.namespace}`);
+  } catch (e) {
+    console.warn("namespace delete failed (continuing):", e);
+  }
 
-  // 3. Remove from Redis LAST
+  // 3. Best-effort finalizer cleanup (CRITICAL)
+  try {
+    await run(
+      `kubectl get ns ${store.namespace} -o json | jq 'del(.spec.finalizers)' | kubectl replace --raw "/api/v1/namespaces/${store.namespace}/finalize" -f -`
+    );
+  } catch (_) {
+    // ignore if already gone
+  }
+
+  // 4. Remove from Redis LAST
   await redis.del(storeKey(id));
 
   res.json({ ok: true });
 });
+
+
 
 
 /* =========================
