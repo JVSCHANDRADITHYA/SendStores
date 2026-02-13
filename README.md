@@ -63,55 +63,24 @@ Prerequisites
 • Helm 3+ installed locally.
 • Node.js (v18+) & Redis running locally or accessible via URL.
 • Ingress Controller (e.g., NGINX) enabled on your cluster.
-1. Clone & Dependencies
+### Clone & Dependencies
 ```bash
 git clone https://github.com/JVSCHANDRADITHYA/SendStores
 cd SendStores
 ```
 
-## If YOU WANNA DO IT EASY
-
-Run docker compose 
+### Run docker compose 
 ```bash
 docker-compose up --build
 ```
+### THE FRONTEND AND BACKEND
+```bash
+FRONTEND DASHBOARD AT http://localhost:3000/
+BACKEND SERVER AT http://localhost:4000 [use /stores]
+```
 ## OR YOU CAN BUILD INDEPENDENTLY
 
-### Install Backend Dependencies
-```
-cd backend
-npm install
-```
-2. Start Redis
-Ensure Redis is running locally (default port 6379):
-```
-docker run -d -p 6379:6379 redis
-```
-3. Configure Kubernetes Context
-Ensure your kubectl is pointing to your desired cluster:
-```
-kubectl config current-context
-```
-4. Run the Control Plane
-
-### In the /backend directory
-```
-npm start
-```
-The server will start at http://localhost:3000 (or your configured port).
-5. Create a Store
-You can use curl or the included Dashboard UI (if running):
-```
-curl -X POST http://localhost:3000/stores \
-  -H "Content-Type: application/json" \
-  -d '{"name": "My Demo Store"}'
-```
-The system will:
-1. Generate a Store ID (e.g., store-xyz).
-2. Create namespace store-xyz.
-3. Install the Helm chart.
-4. Bootstrap WordPress and WooCommerce.
-5. Return a URL: http://store-xyz.localtest.me.
+Refer to [INDIVIDUAL-BUILD.md](INDIVIDUAL-BUILD.md)
 
 <!-- -------------------------------------------------------------------------------- -->
 # Future Roadmap
