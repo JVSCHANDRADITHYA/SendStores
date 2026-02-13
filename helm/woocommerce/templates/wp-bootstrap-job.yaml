@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: wp-bootstrap
+  namespace: {{ .Values.store.name }}
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: wp-cli
+          image: wordpress:cli-php8.2
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              echo "Waiting 20s for MySQL + PVC..."
+              sleep 20
+
+              wp core download --path=/var/www/html --allow-root || true
+
+              wp config create \
+                --dbname=wordpress \
+                --dbuser=wp \
+                --dbpass=wp \
+                --dbhost=mysql \
+                --path=/var/www/html \
+                --allow-root || true
+
+              wp core install \
+                --url="http://{{ .Values.store.domain }}" \
+                --title="Store {{ .Values.store.name }}" \
+                --admin_user=admin \
+                --admin_password=admin123 \
+                --admin_email=admin@store.local \
+                --skip-email \
+                --path=/var/www/html \
+                --allow-root || true
+
+              wp plugin install woocommerce --activate \
+                --path=/var/www/html \
+                --allow-root || true
+
+              PRODUCT_ID=$(wp post create \
+                --post_type=product \
+                --post_title="Test Product" \
+                --post_status=publish \
+                --porcelain \
+                --path=/var/www/html \
+                --allow-root)
+
+              wp post meta update $PRODUCT_ID _regular_price 100 --allow-root
+              wp post meta update $PRODUCT_ID _price 100 --allow-root
+
+              echo "Bootstrap complete"
+          volumeMounts:
+            - name: wp-content
+              mountPath: /var/www/html
+      volumes:
+        - name: wp-content
+          persistentVolumeClaim:
+            claimName: wp-content
