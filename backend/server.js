@@ -119,23 +119,28 @@ app.post("/stores", async (req, res) => {
  */
 app.delete("/stores/:id", async (req, res) => {
   const { id } = req.params;
-
   const store = await redis.hGetAll(storeKey(id));
+
   if (!store || !store.id) {
     return res.status(404).json({ error: "Store not found" });
   }
 
+  // 1. Uninstall Helm release
   try {
     await run(`helm uninstall ${store.release} -n ${store.namespace}`);
   } catch (_) {}
 
+  // 2. Force-delete namespace (authoritative)
   try {
-    await run(`kubectl delete namespace ${store.namespace}`);
+    await run(`kubectl delete ns ${store.namespace} --wait=false`);
   } catch (_) {}
 
+  // 3. Remove from Redis LAST
   await redis.del(storeKey(id));
+
   res.json({ ok: true });
 });
+
 
 /* =========================
    Server
