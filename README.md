@@ -64,10 +64,10 @@ Prerequisites
 • Node.js (v18+) & Redis running locally or accessible via URL.
 • Ingress Controller (e.g., NGINX) enabled on your cluster.
 1. Clone & Dependencies
-
-git clone https://github.com/your-username/your-repo-name.git
+```bash
+git clone https://github.com/JVSCHANDRADITHYA/SendStores
 cd your-repo-name
-
+```
 # Install Backend Dependencies
 ```
 cd backend
