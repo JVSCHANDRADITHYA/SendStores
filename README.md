@@ -8,12 +8,22 @@ A simplified control plane for provisioning isolated, on-demand e-commerce store
   <a href="http://13-234-35-173.sslip.io:3000/" target="_blank">
     <img src="https://img.shields.io/badge/LIVE%20DASHBOARD-CLICK%20HERE-brightgreen?style=for-the-badge&logo=react" />
   </a>
+    <a href="[http://13-234-35-173.sslip.io:3000/](http://13-204-92-56.sslip.io:3000/)" target="_blank">
+    <img src="https://img.shields.io/badge/BETTER%20LIVE%20DASHBOARD-CLICK%20HERE-brightgreen?style=for-the-badge&logo=react" />
+  </a>
 </p>
 
 <h1 align="center">
   <strong>Live URL:</strong><br/><br/>
   <a href="http://13-234-35-173.sslip.io:3000/" target="_blank">
     http://13-234-35-173.sslip.io:3000/
+  </a>
+</h1>
+
+<h1 align="center">
+  <strong>Live URL:</strong><br/><br/>
+  <a href="http://13-204-92-56.sslip.io:3000/" target="_blank">
+    http://13-204-92-56.sslip.io:3000/
   </a>
 </h1>
 
