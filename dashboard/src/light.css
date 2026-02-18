@@ -90,3 +90,133 @@ body::before {
   pointer-events: none;
   z-index: -1;
 }
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-left h1 {
+  margin: 0;
+}
+
+.header-left p {
+  margin: 4px 0 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.logout-btn {
+  padding: 8px 14px;
+  border: none;
+  background: #e53935;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.logout-btn:hover {
+  background: #c62828;
+}
+
+/* ---------- Login Page ---------- */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f172a, #020617);
+}
+
+
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: #0b1220;
+  padding: 32px 28px;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  border: 1px solid #1e293b;
+}
+
+.login-title {
+  margin: 0;
+  text-align: center;
+  color: #f8fafc;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.login-subtitle {
+  margin: 6px 0 28px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #cbd5f5;
+}
+
+.login-form input {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 0.95rem;
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
+}
+
+.login-form button {
+  margin-top: 10px;
+  padding: 11px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  color: #020617;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.05s ease, box-shadow 0.15s ease;
+}
+
+.login-form button:hover:not(:disabled) {
+  box-shadow: 0 8px 20px rgba(56, 189, 248, 0.35);
+  transform: translateY(-1px);
+}
+
+.login-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-error {
+  margin-top: 6px;
+  padding: 10px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #fecaca;
+  font-size: 0.85rem;
+  text-align: center;
+}
