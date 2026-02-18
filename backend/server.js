@@ -1,14 +1,29 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { exec } = require("child_process");
 const { createClient } = require("redis");
-
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const { authMiddleware } = require("./auth");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
+
+/* =========================
+   Auth config
+   ========================= */
+const ADMIN_USER = process.env.ADMIN_USER;
+const ADMIN_PASS = process.env.ADMIN_PASS;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!ADMIN_USER || !ADMIN_PASS || !JWT_SECRET) {
+  console.error("FATAL: Missing auth env vars");
+  process.exit(1);
+}
 
 /* =========================
    Redis (Control Plane DB)
@@ -17,14 +32,18 @@ const redis = createClient({
   url: process.env.REDIS_URL || "redis://localhost:6379",
 });
 
-
 redis.on("error", (err) => {
-  console.error("Redis error", err);
+  console.error("Redis error:", err);
 });
 
 (async () => {
-  await redis.connect();
-  console.log("Connected to Redis");
+  try {
+    await redis.connect();
+    console.log("Connected to Redis");
+  } catch (e) {
+    console.error("FATAL: Redis not reachable");
+    process.exit(1);
+  }
 })();
 
 /* =========================
@@ -39,7 +58,6 @@ const run = (cmd) =>
   });
 
 const genId = () => `store-${Math.random().toString(36).slice(2, 8)}`;
-
 const storeKey = (id) => `store:${id}`;
 
 /* =========================
@@ -47,24 +65,46 @@ const storeKey = (id) => `store:${id}`;
    ========================= */
 
 /**
- * LIST STORES
- * Source of truth: Redis
+ * LOGIN
  */
-app.get("/stores", async (req, res) => {
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+
+  if (username !== ADMIN_USER) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+
+  // deterministic compare
+  if (password !== ADMIN_PASS) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+
+  const token = jwt.sign(
+    { role: "admin" },
+    JWT_SECRET,
+    { expiresIn: "8h" }
+  );
+
+  res.json({ token });
+});
+
+/**
+ * LIST STORES
+ */
+app.get("/stores", authMiddleware, async (req, res) => {
   try {
     const keys = await redis.keys("store:*");
     const stores = await Promise.all(keys.map((k) => redis.hGetAll(k)));
     res.json(stores);
-  } catch (e) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch stores" });
   }
 });
 
 /**
  * CREATE STORE
- * Idempotent at control-plane level
  */
-app.post("/stores", async (req, res) => {
+app.post("/stores", authMiddleware, async (req, res) => {
   const { engine = "woocommerce" } = req.body;
 
   const id = genId();
@@ -82,9 +122,7 @@ app.post("/stores", async (req, res) => {
     release,
   };
 
-  // Persist immediately
   await redis.hSet(storeKey(id), store);
-
   res.status(202).json(store);
 
   try {
@@ -103,7 +141,6 @@ app.post("/stores", async (req, res) => {
       ].join(" ")
     );
 
-    // Mark Ready after stabilization window
     setTimeout(async () => {
       await redis.hSet(storeKey(id), { status: "Ready" });
     }, 30000);
@@ -115,50 +152,28 @@ app.post("/stores", async (req, res) => {
 
 /**
  * DELETE STORE
- * Strong cleanup guarantees
  */
-app.delete("/stores/:id", async (req, res) => {
+app.delete("/stores/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
   const store = await redis.hGetAll(storeKey(id));
 
-  if (!store || !store.id) {
+  if (!store?.id) {
     return res.status(404).json({ error: "Store not found" });
   }
 
-  // Mark deleting (important for UI)
   await redis.hSet(storeKey(id), { status: "Deleting" });
 
-  // 1. Helm uninstall (idempotent)
   try {
     await run(`helm uninstall ${store.release} -n ${store.namespace}`);
-  } catch (e) {
-    console.warn("helm uninstall failed (continuing):", e);
-  }
+  } catch {}
 
-  // 2. Delete namespace (authoritative)
   try {
     await run(`kubectl delete ns ${store.namespace}`);
-  } catch (e) {
-    console.warn("namespace delete failed (continuing):", e);
-  }
+  } catch {}
 
-  // 3. Best-effort finalizer cleanup (CRITICAL)
-  try {
-    await run(
-      `kubectl get ns ${store.namespace} -o json | jq 'del(.spec.finalizers)' | kubectl replace --raw "/api/v1/namespaces/${store.namespace}/finalize" -f -`
-    );
-  } catch (_) {
-    // ignore if already gone
-  }
-
-  // 4. Remove from Redis LAST
   await redis.del(storeKey(id));
-
   res.json({ ok: true });
 });
-
-
-
 
 /* =========================
    Server
