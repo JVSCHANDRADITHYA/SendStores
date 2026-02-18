@@ -2,6 +2,22 @@
 ### Kubernetes-Native Multi-Store Control Plane
 A simplified control plane for provisioning isolated, on-demand e-commerce stores using Kubernetes and Helm.
 
+# ☁️ SendStores — Live Dashboard
+
+<p align="center">
+  <a href="http://13-234-35-173.sslip.io:3000/" target="_blank">
+    <img src="https://img.shields.io/badge/LIVE%20DASHBOARD-CLICK%20HERE-brightgreen?style=for-the-badge&logo=react" />
+  </a>
+</p>
+
+<p align="center">
+  <strong>🔗 Live URL:</strong><br/>
+  <a href="http://13-234-35-173.sslip.io:3000/" target="_blank">
+    http://13-234-35-173.sslip.io:3000/
+  </a>
+</p>
+
+
 ![APPLICATION](public/mock.png)
 
 <center><p><b>DO CHECKOUT THE MARIADB BRANCH FOR OPTMIZED DATABASE PERFROMANCE PER STORE</b></p></center>
