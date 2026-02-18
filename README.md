@@ -11,7 +11,7 @@ A simplified control plane for provisioning isolated, on-demand e-commerce store
 </p>
 
 <p align="center">
-  <strong>🔗 Live URL:</strong><br/>
+  <strong>Live URL:</strong><br/>
   <a href="http://13-234-35-173.sslip.io:3000/" target="_blank">
     http://13-234-35-173.sslip.io:3000/
   </a>
