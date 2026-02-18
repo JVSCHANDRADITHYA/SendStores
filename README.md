@@ -10,12 +10,12 @@ A simplified control plane for provisioning isolated, on-demand e-commerce store
   </a>
 </p>
 
-<p align="center">
-  <strong>Live URL:</strong><br/>
+<h1 align="center">
+  <strong>Live URL:</strong><br/><br/>
   <a href="http://13-234-35-173.sslip.io:3000/" target="_blank">
     http://13-234-35-173.sslip.io:3000/
   </a>
-</p>
+</h1>
 
 
 ![APPLICATION](public/mock.png)
