@@ -19,9 +19,9 @@ services:
       - redis
     environment:
       REDIS_URL: redis://redis:6379
+      KUBECONFIG: /root/.kube/config
     volumes:
-      - ~/.kube:/root/.kube
-
+      - ~/.kube:/root/.kube:ro
 
   dashboard:
     build: ./dashboard

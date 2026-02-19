@@ -34,40 +34,56 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <h1 className="login-title">SendStores</h1>
-        <p className="login-subtitle">Admin Control Plane</p>
+ <div className="login-page">
+  <div className="login-card">
+    <h1 className="login-title">SendStores</h1>
+    <p className="login-subtitle">Admin Control Plane</p>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          <label>
-            Username
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="admin"
-              required
-            />
-          </label>
-
-          <label>
-            Password
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-          </label>
-
-          <button type="submit" disabled={loading}>
-            {loading ? "Authenticating…" : "Sign In"}
-          </button>
-
-          {error && <div className="login-error">{error}</div>}
-        </form>
-      </div>
+    <div className="login-info">
+      <p className="login-info-text">
+        Don’t have credentials?
+      </p>
+      <p className="login-info-text">
+        Run it locally or check the docs →
+        <a
+          href="https://github.com/JVSCHANDRADITHYA/SendStores"
+          className="login-info-link"
+        >
+          GitHub Repo
+        </a>
+      </p>
     </div>
+
+    <form onSubmit={handleSubmit} className="login-form">
+      <label>
+        Username
+        <input
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="admin"
+          required
+        />
+      </label>
+
+      <label>
+        Password
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          required
+        />
+      </label>
+
+      <button type="submit" disabled={loading}>
+        {loading ? "Authenticating…" : "Sign In"}
+      </button>
+
+      {error && <div className="login-error">{error}</div>}
+    </form>
+  </div>
+</div>
+
   );
 }

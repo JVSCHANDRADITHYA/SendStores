@@ -110,7 +110,7 @@ app.post("/stores", authMiddleware, async (req, res) => {
   const id = genId();
   const namespace = id;
   const release = id;
-  const domain = `${id}.localtest.me`;
+  const domain = `${id}.${process.env.BASE_DOMAIN}`;
 
   const store = {
     id,
