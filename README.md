@@ -32,6 +32,9 @@ A simplified control plane for provisioning isolated, on-demand e-commerce store
 
 ![APPLICATION](public/mock.png)
 
+<img width="1652" height="422" alt="image" src="https://github.com/user-attachments/assets/7d19f6ee-f942-4648-8e12-73773704f9f4" />
+
+
 <center><p><b>DO CHECKOUT THE MARIADB BRANCH FOR OPTMIZED DATABASE PERFROMANCE PER STORE</b></p></center>
 
 # Overview
