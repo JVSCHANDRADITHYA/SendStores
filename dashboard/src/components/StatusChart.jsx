@@ -12,6 +12,7 @@ export default function StatusChart({ stores }) {
     { name: "Ready", count: stores.filter(s => s.status === "Ready").length },
     { name: "Provisioning", count: stores.filter(s => s.status === "Provisioning").length },
     { name: "Failed", count: stores.filter(s => s.status === "Failed").length },
+    { name: "Orphaned", count: stores.filter(s => s.status === "Orphaned").length },
   ];
 
   return (

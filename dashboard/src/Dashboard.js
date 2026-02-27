@@ -42,7 +42,8 @@ function App() {
     <div className="container">
 <header className="header">
   <div className="header-left">
-    <h1>Store Provisioning Dashboard</h1>
+    <h1 className="title">SendStores</h1>
+    <h2>Store Provisioning Dashboard</h2>
     <p>Local K8s native multi-store orchestration</p>
   </div>
 
@@ -80,7 +81,7 @@ function App() {
       {!isLoading && !isError && (
         <>
           {/* 🔥 NEW: Top summary cards */}
-          <SummaryCards stores={stores} />
+            <SummaryCards stores={stores} />
 
           {/* 📊 NEW: Charts */}
           <StatusChart stores={stores} />
