@@ -135,9 +135,6 @@ app.get("/stores", authMiddleware, async (req, res) => {
   }
 });
 
-/**
- * CREATE STORE
- */
 app.post("/stores", authMiddleware, async (req, res) => {
   const { engine = "woocommerce" } = req.body;
 
@@ -145,12 +142,13 @@ app.post("/stores", authMiddleware, async (req, res) => {
   const namespace = id;
   const release = id;
   const domain = `${id}.${process.env.BASE_DOMAIN}`;
+  const url = `http://${domain}`;
 
   const store = {
     id,
     engine,
     status: "Provisioning",
-    url: `http://${domain}`,
+    url,
     createdAt: new Date().toISOString(),
     namespace,
     release,
@@ -175,14 +173,40 @@ app.post("/stores", authMiddleware, async (req, res) => {
       ].join(" ")
     );
 
-    setTimeout(async () => {
-      await redis.hSet(storeKey(id), { status: "Ready" });
-    }, 30000);
+    await redis.hSet(storeKey(id), { status: "Bootstrapping" });
+
+    // 🔁 Keep reconciling until Ready
+    while (true) {
+      try {
+        // 1️⃣ Check Job
+        const jobOutput = await run(
+          `kubectl get job ${release}-bootstrap -n ${namespace} -o json`
+        );
+        const job = JSON.parse(jobOutput);
+
+        if (job.status?.failed > 0) {
+          await redis.hSet(storeKey(id), { status: "Failed" });
+          return;
+        }
+
+        if (job.status?.succeeded >= 1) {
+          await redis.hSet(storeKey(id), { status: "Ready" });
+        }
+
+      } catch (err) {
+        console.error("Reconcile loop error:", err.message);
+      }
+
+      // wait 3 sec before next check
+      await new Promise(r => setTimeout(r, 3000));
+    }
+
   } catch (e) {
+    console.error("Helm install failed:", e.message);
     await redis.hSet(storeKey(id), { status: "Failed" });
-    console.error("Provisioning failed:", e);
   }
 });
+
 
 /**
  * DELETE STORE
