@@ -25,6 +25,15 @@ if (!ADMIN_USER || !ADMIN_PASS || !JWT_SECRET) {
   process.exit(1);
 }
 
+const namespaceExists = async (ns) => {
+  try {
+    await run(`kubectl get ns ${ns}`);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 /* =========================
    Redis (Control Plane DB)
    ========================= */
@@ -94,9 +103,34 @@ app.post("/login", async (req, res) => {
 app.get("/stores", authMiddleware, async (req, res) => {
   try {
     const keys = await redis.keys("store:*");
-    const stores = await Promise.all(keys.map((k) => redis.hGetAll(k)));
+    const stores = [];
+
+    for (const key of keys) {
+      const store = await redis.hGetAll(key);
+
+      if (!store?.namespace) continue;
+
+      const exists = await namespaceExists(store.namespace);
+      
+      if (!exists && store.status !== "Provisioning") {
+        await redis.hSet(key, {
+          status: "Orphaned",
+          orphanedAt: new Date().toISOString(),
+        });
+
+        stores.push({
+          ...store,
+          status: "Orphaned",
+        });
+
+        continue;
+      }
+
+      stores.push(store);
+    }
+
     res.json(stores);
-  } catch {
+  } catch (e) {
     res.status(500).json({ error: "Failed to fetch stores" });
   }
 });
