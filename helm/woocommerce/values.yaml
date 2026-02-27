@@ -7,4 +7,4 @@ mysql:
   storage: 5Gi
 
 wordpress:
-  image: wordpress:6.4-apache
+  image: wordpress:6.8-apache 
