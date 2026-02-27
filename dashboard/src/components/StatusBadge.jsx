@@ -2,9 +2,11 @@ export default function StatusBadge({ status }) {
   const STATUS_COLORS = {
     Ready: "#008000",        // green
     Failed: "#dc2626",       // red
-    Provisioning: "#3b82f6", // light blue
-    Orphaned: "#4d0b0b",     // danger / dark red
-    Deleting: "#7c3aed",     // optional
+    Provisioning: "#3b82f6", // blue
+    Bootstrapping: "#6366f1", // indigo
+    Finalizing: "#0ea5e9",   // cyan
+    Orphaned: "#7f1d1d",     // dark red
+    Deleting: "#7c3aed",     // purple
   };
 
   const color = STATUS_COLORS[status] || "#f59e0b"; // default orange
@@ -24,3 +26,5 @@ export default function StatusBadge({ status }) {
     </span>
   );
 }
+
+
