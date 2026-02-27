@@ -1,0 +1,135 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-bootstrap
+  namespace: {{ .Values.store.name }}
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: {{ .Values.wordpress.image }}
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -e
+              cd /var/www/html
+
+              echo "Installing WP-CLI..."
+              curl -s -o wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+              chmod +x wp-cli.phar
+              mv wp-cli.phar /usr/local/bin/wp
+
+              echo "Ensuring WordPress core exists..."
+              if [ ! -f wp-load.php ]; then
+                cp -r /usr/src/wordpress/* /var/www/html/
+              fi
+
+              echo "Waiting for MySQL..."
+              until php -r '
+              $fp = @fsockopen("mysql", 3306, $errno, $errstr, 2);
+              if ($fp) { fclose($fp); exit(0); }
+              exit(1);
+              '; do sleep 5; done
+
+              if [ ! -f wp-config.php ]; then
+                wp config create \
+                  --dbname=wordpress \
+                  --dbuser=wp \
+                  --dbpass=wp \
+                  --dbhost=mysql \
+                  --path=/var/www/html \
+                  --allow-root
+              fi
+
+              if ! wp core is-installed --path=/var/www/html --allow-root; then
+                wp core install \
+                  --url="http://{{ .Values.store.domain }}" \
+                  --title="My Store" \
+                  --admin_user=admin \
+                  --admin_password=admin123 \
+                  --admin_email=admin@example.com \
+                  --skip-email \
+                  --path=/var/www/html \
+                  --allow-root
+              fi
+
+              wp theme install twentytwentyfour --activate --path=/var/www/html --allow-root || true
+              wp plugin install woocommerce --activate --path=/var/www/html --allow-root || true
+
+              echo "Disabling WooCommerce Coming Soon..."
+
+              wp option update woocommerce_coming_soon no --path=/var/www/html --allow-root || true
+              wp option update woocommerce_launch_completed yes --path=/var/www/html --allow-root || true
+              wp option update woocommerce_task_list_complete yes --path=/var/www/html --allow-root || true
+
+              # Remove any transient onboarding locks
+              wp option delete woocommerce_admin_install_timestamp --path=/var/www/html --allow-root || true
+              wp option delete woocommerce_show_marketplace_suggestions --path=/var/www/html --allow-root || true
+
+              wp rewrite structure '/%postname%/' --path=/var/www/html --allow-root || true
+              wp rewrite flush --hard --path=/var/www/html --allow-root || true
+
+              wp plugin install woocommerce --activate --path=/var/www/html --allow-root || true
+
+              echo "Enabling Cash on Delivery..."
+
+              wp option update woocommerce_cod_settings '{
+                "enabled":"yes",
+                "title":"Cash on Delivery",
+                "description":"Pay with cash upon delivery.",
+                "instructions":"Please keep exact change ready.",
+                "enable_for_methods":[]
+              }' \
+              --format=json \
+              --path=/var/www/html \
+              --allow-root || true
+
+              if ! wp wc product list --path=/var/www/html --allow-root --user=admin | grep "Mock Product"; then
+                wp wc product create \
+                  --name="Mock Product" \
+                  --type=simple \
+                  --regular_price=999 \
+                  --status=publish \
+                  --user=admin \
+                  --path=/var/www/html \
+                  --allow-root
+              fi
+
+              wp wc product create \
+                --name="Mock Product - 1" \
+                --type=simple \
+                --regular_price=6699 \
+                --status=publish \
+                --user=admin \
+                --path=/var/www/html \
+                --allow-root
+
+              echo "Bootstrap complete."
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: mysql
+            - name: WORDPRESS_DB_NAME
+              value: wordpress
+            - name: WORDPRESS_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_USER
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_PASSWORD
+          volumeMounts:
+            - name: wp-data
+              mountPath: /var/www/html/wp-content
+      volumes:
+        - name: wp-data
+          persistentVolumeClaim:
+            claimName: wp-content
