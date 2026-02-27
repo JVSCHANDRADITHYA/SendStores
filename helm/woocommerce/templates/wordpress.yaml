@@ -35,7 +35,7 @@ spec:
                 key: MYSQL_PASSWORD
         volumeMounts:
           - name: wp-content
-            mountPath: /var/www/html
+            mountPath: /var/www/html/wp-content
       volumes:
         - name: wp-content
           persistentVolumeClaim:
