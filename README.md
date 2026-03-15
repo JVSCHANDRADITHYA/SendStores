@@ -15,8 +15,8 @@ A simplified control plane for provisioning isolated, on-demand e-commerce store
 
 <h1 align="center">
   <strong>Live URL [Stable]:</strong><br/><br/>
-    <a href="https://jvschandradithya.github.io/sendstores" target="_blank">
-    https://jvschandradithya.github.io/sendstores
+    <a href="https://chandradithya.dev/sendstores" target="_blank">
+    https://chandradithya.dev/sendstores
   </a>
 </br>
   <a href="http://13-204-92-56.sslip.io:3000/" target="_blank">
